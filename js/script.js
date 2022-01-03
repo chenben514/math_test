@@ -82,6 +82,9 @@ function changeVariable(inputString, varArr) {
   newString = newString.replace("{b}", varArr[1]);
   newString = newString.replace("{c}", varArr[2]);
   newString = newString.replace("{a+b}", String(varArr[0] + varArr[1]));
+  newString = newString.replace("{a+c}", String(varArr[0] + varArr[2]));
+  newString = newString.replace("{a+c+10}", String(varArr[0] + varArr[2] + 10));
+  newString = newString.replace("{a+c-10}", String(varArr[0] + varArr[2] - 10));
   newString = newString.replace("{a-b}", String(varArr[0] - varArr[1]));
   newString = newString.replace("{b-a}", String(varArr[1] - varArr[0]));
   newString = newString.replace("{a+b-10}", String(varArr[0] + varArr[1] - 10));
