@@ -44,8 +44,17 @@
               class="styled-select"
               onchange="quiz.select_change()"
             >
-              <option value="10" class="service-small">
+              <option value="06" class="service-small">
                 二上_06_兩步驟加減
+              </option>
+              <option value="07" class="service-small">
+                二上_07_2,5,4,8的乘法
+              </option>
+              <option value="08" class="service-small">
+                二上_08_平面圖形與立體形體
+              </option>
+              <option value="09" class="service-small">
+                二上_09_3,6,7,9的乘法
               </option>
             </select>
           </td>
@@ -79,6 +88,13 @@
         <div class="option_list">
           <!-- Here I've inserted options from JavaScript -->
         </div>
+        <div class="correct_list">
+          <p></p>
+          <!-- Here I've inserted options from JavaScript -->
+        </div>
+        <div class="select_list">
+          <!-- Here I've inserted options from JavaScript -->
+        </div>
       </section>
 
       <!-- footer of Quiz Box -->
@@ -88,6 +104,8 @@
         </div>
         <button class="next_btn">下一題</button>
       </footer>
+
+      <!-- <div class="keyboard is-hide" id="vKeyboard" / > -->
     </div>
 
     <!-- Result Box -->
@@ -107,6 +125,6 @@
     <script src="js/store_hist.js"></script>
 
     <!-- Inside this JavaScript file I've coded all Quiz Codes -->
-    <script src="js/script.js"></script>
+    <script src="js/script.js?timestamp=" + new Date().getTime()></script>
   </body>
 </html>
