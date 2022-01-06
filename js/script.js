@@ -1,5 +1,5 @@
 //selecting all required elements
-let timeValue = 60;
+let timeValue = 120;
 let curTimeValue = timeValue;
 const quizHeader = document.querySelector(".quiz_box");
 const quizHeaderWidth = parseInt(quizHeader.offsetWidth, 10);
@@ -14,7 +14,8 @@ const time_line = document.querySelector("header .time_line");
 const timeText = document.querySelector(".timer .time_left_txt");
 const timeCount = document.querySelector(".timer .timer_sec");
 timeCount.textContent = timeValue;
-var selLevel = "";
+
+var errorList = []; //error list
 
 // if startQuiz button clicked
 start_btn.onclick = () => {
@@ -88,12 +89,12 @@ function getQuestions() {
   var selCategory = document.getElementById("category").value;
   var selLevel = document.getElementById("level").value;
   var selFile = "./data/" + selCategory + "_" + selLevel + ".csv";
-  // if (selLevel.includes("zhuyin")) {
-  //   curQuesType = "direct_input";
-  //   document.querySelector(".keyboard").hidden = false;
-  // } else {
-  //   document.querySelector(".keyboard").hidden = true;
-  // }
+  if (selLevel.includes("zhuyin")) {
+    curQuesType = "direct_input";
+    document.querySelector(".keyboard").hidden = false;
+  } else {
+    document.querySelector(".keyboard").hidden = true;
+  }
 
   var read = new XMLHttpRequest();
   read.open("GET", selFile, false);
@@ -123,7 +124,6 @@ function getQuestions() {
   class Question {
     numb;
     question;
-    quesType;
     answer;
     option1;
     option2;
@@ -136,53 +136,23 @@ function getQuestions() {
   var i;
   var j;
   for (i = 0; i < quesCnt; i++) {
-    varArr = [];
-    var singQuesArr = quesArr[quesList[i]].split(",");
-
-    /* 0-2: random number from 10-99 */
-    for (j = 0; j < 3; j++) {
-      if (j > 0) {
-        if (varArr[j] === varArr[j - 1]) {
-          j--;
-          continue;
-        }
-      }
-      newValue = Math.floor(Math.random() * 90) + 10;
-      varArr.push(newValue);
-    }
-
-    /* 3-5: random number from 1-9 */
-    for (j = 0; j < 3; j++) {
-      newValue = Math.floor(Math.random() * 9) + 1;
-      varArr.push(newValue);
-    }
-
-    var singQuesArr = quesArr[quesList[i]].split(",");
     let question = new Question();
+    var singQuesArr = quesArr[quesList[i]].split(";");
     question.numb = i + 1;
-    question.question = changeVariable(singQuesArr[0], varArr);
-
-    if (singQuesArr[1].substring(0, 1) === "=")
-      question.quesType = "direct_input";
-    else question.quesType = "option";
-
-    question.answer = changeVariable(singQuesArr[1], varArr);
-
+    question.question = singQuesArr[0];
+    question.answer = singQuesArr[1];
     ansList = [];
     while (ansList.length < 4) {
       var r = Math.floor(Math.random() * 4) + 1;
       if (ansList.indexOf(r) === -1) ansList.push(r);
     }
-    question.option1 = changeVariable(singQuesArr[ansList[0]], varArr);
-    question.option2 = changeVariable(singQuesArr[ansList[1]], varArr);
-    question.option3 = changeVariable(singQuesArr[ansList[2]], varArr);
-    question.option4 = changeVariable(singQuesArr[ansList[3]], varArr);
+    question.option1 = singQuesArr[ansList[0]];
+    question.option2 = singQuesArr[ansList[1]];
+    question.option3 = singQuesArr[ansList[2]];
+    question.option4 = singQuesArr[ansList[3]];
     question.category = singQuesArr[2];
     questions[i] = question;
-
-    console.log("question:" + question);
   }
-  // alert(singQuesArr);
 }
 
 function UrlExists(url) {
@@ -249,14 +219,10 @@ function confirmClick() {
   } else {
     correctAnswer = questions[que_count].question.replace(".mp3", "");
   }
-  if (typeof correctAnswer == "string" && typeof correctAnswer) {
-    if (inputAnswer.replace(" ", "") === correctAnswer.replace(" ", ""))
-      directSelected("correct");
-    else directSelected("incorrect");
-  } else {
-    if (inputAnswer == correctAnswer) directSelected("correct");
-    else directSelected("incorrect");
-  }
+
+  if (inputAnswer.replace(" ", "") === correctAnswer.replace(" ", ""))
+    directSelected("correct");
+  else directSelected("incorrect");
 
   //   document.querySelector(".target" + String(j)).innerText !==
   //   questions[index].direct_answers[j]
@@ -301,9 +267,12 @@ function showQuetions(index) {
   let confirm_button = "";
 
   que_text.innerHTML = que_tag; //adding new span tag inside que_tag
-  if (
+  if (questions[index].category != undefined) {
+    // curQuesType = "option";
+    option_list.innerHTML = option_tag; //adding new div tag inside option_tag
+  } else if (
     questions[index].question.includes(".mp3") ||
-    questions[index].quesType.includes("direct_input")
+    curQuesType.includes("direct_input")
   ) {
     let answer_target =
       '<div><input type="text" class="direct_input" name="direct_input" id="direct_input" value="" placeholder="輸入答案" style="width:40%;height:40px;font-size:20px;padding:10px;">';
@@ -312,12 +281,12 @@ function showQuetions(index) {
     curQuesType = "direct_input";
     option_list.innerHTML = answer_target;
   } else {
-    option_list.innerHTML = option_tag; //adding new div tag inside option_tag
-    curQuesType = "option";
+    // curQuesType = "direct";
     let answer_target = '<div class="option">';
     let answer_option = '<div class="answer" "option">';
     const sentence = questions[index].answer;
     let wordArr = sentence.split(/([,.\s])/);
+    let option_tag;
 
     let finalWordArr = [];
     for (const word of wordArr) {
@@ -349,9 +318,10 @@ function showQuetions(index) {
     console.log(answer_option);
 
     answer_option += "</div>";
-    // option_list.innerHTML = answer_target;
-    // select_list.innerHTML = answer_option;
+    option_list.innerHTML = answer_target;
+    select_list.innerHTML = answer_option;
     correct_list.innerHTML = "";
+    console.log(answer_option);
 
     for (i = 0; i < finalWordArr.length; i++) {
       answer_option += '<span class="my_option">';
@@ -588,7 +558,7 @@ function inputkeyb(char) {
 
 document.addEventListener("keydown", keydown);
 function keydown(e) {
-  if (!selLevel.includes("zhuyin")) return;
+  // alert("ben_debug:" + e.code);
   e.preventDefault();
   switch (e.code) {
     case "Space":
@@ -727,28 +697,4 @@ function keydown(e) {
     default:
       break;
   }
-}
-
-function changeVariable(inputString, varArr) {
-  var newString;
-  if (inputString === undefined) return inputString;
-  newString = inputString.replace("{a}", varArr[0]);
-  newString = newString.replace("{b}", varArr[1]);
-  newString = newString.replace("{c}", varArr[2]);
-  newString = newString.replace("{a+b}", String(varArr[0] + varArr[1]));
-  newString = newString.replace(
-    "{a+b+c}",
-    String(varArr[0] + varArr[1] + varArr[2])
-  );
-  newString = newString.replace("{A}", varArr[3]);
-  newString = newString.replace("{B}", varArr[4]);
-  newString = newString.replace("{C}", varArr[5]);
-
-  if (newString.substring(0, 1) === "=") {
-    var calcString = newString.substring(1, newString.length);
-    newString = eval(calcString);
-  }
-
-  // alert(inputString + "\n" + newString)
-  return newString;
 }
