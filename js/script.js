@@ -1,5 +1,7 @@
+// import { courses, lessons } from "./course.js";
+
 //selecting all required elements
-let timeValue = 120;
+let timeValue = 60;
 let curTimeValue = timeValue;
 const quizHeader = document.querySelector(".quiz_box");
 const quizHeaderWidth = parseInt(quizHeader.offsetWidth, 10);
@@ -14,17 +16,23 @@ const time_line = document.querySelector("header .time_line");
 const timeText = document.querySelector(".timer .time_left_txt");
 const timeCount = document.querySelector(".timer .timer_sec");
 timeCount.textContent = timeValue;
+var selLevel = "";
 
-var errorList = []; //error list
+let curQuestion = "";
+let curTopic = "";
 
 // if startQuiz button clicked
 start_btn.onclick = () => {
-  quiz_box.classList.add("activeQuiz"); //show quiz box
   getQuestions();
-  showQuetions(0); //calling showQestions function
-  queCounter(1); //passing 1 parameter to queCounter
-  startTimer(); //calling startTimer function
-  startTimerLine(); //calling startTimerLine function
+  if (quesCnt === 0) {
+    alert("沒有任何題目");
+  } else {
+    quiz_box.classList.add("activeQuiz"); //show quiz box
+    showQuetions(0); //calling showQestions function
+    queCounter(1); //passing 1 parameter to queCounter
+    startTimer(); //calling startTimer function
+    startTimerLine(); //calling startTimerLine function
+  }
 };
 
 let que_count = 0;
@@ -89,28 +97,42 @@ function getQuestions() {
   var selCategory = document.getElementById("category").value;
   var selLevel = document.getElementById("level").value;
   var selFile = "./data/" + selCategory + "_" + selLevel + ".csv";
-  if (selLevel.includes("zhuyin")) {
-    curQuesType = "direct_input";
-    document.querySelector(".keyboard").hidden = false;
-  } else {
-    document.querySelector(".keyboard").hidden = true;
-  }
+  curTopic = selCategory;
+  // if (selLevel.includes("zhuyin")) {
+  //   curQuesType = "direct_input";
+  //   document.querySelector(".keyboard").hidden = false;
+  // } else {
+  //   document.querySelector(".keyboard").hidden = true;
+  // }
 
-  var read = new XMLHttpRequest();
-  read.open("GET", selFile, false);
-  read.setRequestHeader("Cache-Control", "no-cache");
-  read.send();
-  var displayName = read.responseText;
-  var quesArr = displayName.replace(/\r\n/g, "\n").split("\n");
-  var quesList = [];
-  let quesCnt = quesArr.length;
-  let ansList = [];
+  // var errArr = localStorage.getItem(selCategory + "_" + selLevel + "_err");
+  // alert(errArr);
   let tmpCnt = 0;
-
   let tmpArr = [];
-  let k = 0;
-  for (let k = 0; k < quesCnt; k++) {
-    if (quesArr[k].length > 1) tmpArr.push(quesArr[k]);
+  var quesList = [];
+  let ansList = [];
+
+  if (selLevel === "XX") {
+    var errContent = localStorage.getItem(curTopic + "_err");
+    if (errContent != null) {
+      errArr = errContent.split("@");
+      for (let j = 0; j < errArr.length; j++) {
+        tmpArr.push(errArr[j]);
+      }
+    }
+  } else {
+    var read = new XMLHttpRequest();
+    read.open("GET", selFile, false);
+    read.setRequestHeader("Cache-Control", "no-cache");
+    read.send();
+    var displayName = read.responseText;
+
+    var quesArr = displayName.replace(/\r\n/g, "\n").split("\n");
+    let quesCnt = quesArr.length;
+
+    for (let k = 0; k < quesCnt; k++) {
+      if (quesArr[k].length > 1) tmpArr.push(quesArr[k]);
+    }
   }
   quesArr = tmpArr;
   quesCnt = quesArr.length;
@@ -124,35 +146,68 @@ function getQuestions() {
   class Question {
     numb;
     question;
+    quesType;
     answer;
     option1;
     option2;
     option3;
     option4;
     direct_answers = [];
+    oriQuestion;
   }
   //2.generate questions
   questions = [];
   var i;
   var j;
   for (i = 0; i < quesCnt; i++) {
+    varArr = [];
+    var singQuesArr = quesArr[quesList[i]].split(",");
+
+    /* 0-2: random number from 10-99 */
+    for (j = 0; j < 3; j++) {
+      if (j > 0) {
+        if (varArr[j] === varArr[j - 1]) {
+          j--;
+          continue;
+        }
+      }
+      newValue = Math.floor(Math.random() * 90) + 10;
+      varArr.push(newValue);
+    }
+
+    /* 3-5: random number from 1-9 */
+    for (j = 0; j < 3; j++) {
+      newValue = Math.floor(Math.random() * 9) + 1;
+      varArr.push(newValue);
+    }
+
     let question = new Question();
-    var singQuesArr = quesArr[quesList[i]].split(";");
+    question.oriQuestion = quesArr[quesList[i]];
+    var singQuesArr = quesArr[quesList[i]].split(",");
     question.numb = i + 1;
-    question.question = singQuesArr[0];
-    question.answer = singQuesArr[1];
+    question.question = changeVariable(singQuesArr[0], varArr);
+
+    if (singQuesArr[1].substring(0, 1) === "=")
+      question.quesType = "direct_input";
+    else question.quesType = "option";
+
+    question.answer = changeVariable(singQuesArr[1], varArr);
+
     ansList = [];
     while (ansList.length < 4) {
       var r = Math.floor(Math.random() * 4) + 1;
       if (ansList.indexOf(r) === -1) ansList.push(r);
     }
-    question.option1 = singQuesArr[ansList[0]];
-    question.option2 = singQuesArr[ansList[1]];
-    question.option3 = singQuesArr[ansList[2]];
-    question.option4 = singQuesArr[ansList[3]];
+    question.option1 = changeVariable(singQuesArr[ansList[0]], varArr);
+    question.option2 = changeVariable(singQuesArr[ansList[1]], varArr);
+    question.option3 = changeVariable(singQuesArr[ansList[2]], varArr);
+    question.option4 = changeVariable(singQuesArr[ansList[3]], varArr);
     question.category = singQuesArr[2];
     questions[i] = question;
+
+    console.log("question:" + question);
   }
+  // alert(singQuesArr);
 }
 
 function UrlExists(url) {
@@ -179,13 +234,10 @@ function pronClick() {
     msg.pitch = 1;
     window.speechSynthesis.speak(msg);
   }
-  // alert(mp3File);
   // try {
   //   var audio = new Audio(mp3File);
-  //   if (isNaN(sound.duration)) alert("Do something");
   //   audio.play();
   // } catch {
-  //   alert("no file:" + mp3File);
   //   var msg = new SpeechSynthesisUtterance();
 
   //   // Set the text.
@@ -214,15 +266,23 @@ function pronClick() {
 function confirmClick() {
   let inputAnswer = document.querySelector(".direct_input").value;
   let correctAnswer = "";
+  document.querySelector("#confirmButton").disabled = "true";
   if (curQuesType === "direct_input") {
     correctAnswer = questions[que_count].answer;
   } else {
     correctAnswer = questions[que_count].question.replace(".mp3", "");
   }
-
-  if (inputAnswer.replace(" ", "") === correctAnswer.replace(" ", ""))
-    directSelected("correct");
-  else directSelected("incorrect");
+  if (typeof correctAnswer == "string" && typeof correctAnswer) {
+    if (inputAnswer.replace(" ", "") === correctAnswer.replace(" ", "")) {
+      directSelected("correct");
+      errArr.pop();
+    } else directSelected("incorrect");
+  } else {
+    if (inputAnswer == correctAnswer) {
+      directSelected("correct");
+      errArr.pop();
+    } else directSelected("incorrect");
+  }
 
   //   document.querySelector(".target" + String(j)).innerText !==
   //   questions[index].direct_answers[j]
@@ -236,6 +296,7 @@ function showQuetions(index) {
   const que_text = document.querySelector(".que_text");
   correct_list.innerHTML = "";
   curTimeValue = timeValue;
+  curQuestion = questions[index].oriQuestion;
 
   nowCursorFocus = 0;
   //creating a new span and div tag for question and option and passing the value using array index
@@ -267,26 +328,23 @@ function showQuetions(index) {
   let confirm_button = "";
 
   que_text.innerHTML = que_tag; //adding new span tag inside que_tag
-  if (questions[index].category != undefined) {
-    // curQuesType = "option";
-    option_list.innerHTML = option_tag; //adding new div tag inside option_tag
-  } else if (
+  if (
     questions[index].question.includes(".mp3") ||
-    curQuesType.includes("direct_input")
+    questions[index].quesType.includes("direct_input")
   ) {
     let answer_target =
       '<div><input type="text" class="direct_input" name="direct_input" id="direct_input" value="" placeholder="輸入答案" style="width:40%;height:40px;font-size:20px;padding:10px;">';
     answer_target +=
-      "<span> <button onclick='confirmClick()' style='width:70px;height:40px;' >確認</button></span> </div>";
+      "<span> <button id='confirmButton' onclick='confirmClick()' style='width:70px;height:40px;' >確認</button></span> </div>";
     curQuesType = "direct_input";
     option_list.innerHTML = answer_target;
   } else {
-    // curQuesType = "direct";
+    option_list.innerHTML = option_tag; //adding new div tag inside option_tag
+    curQuesType = "option";
     let answer_target = '<div class="option">';
     let answer_option = '<div class="answer" "option">';
     const sentence = questions[index].answer;
     let wordArr = sentence.split(/([,.\s])/);
-    let option_tag;
 
     let finalWordArr = [];
     for (const word of wordArr) {
@@ -318,10 +376,9 @@ function showQuetions(index) {
     console.log(answer_option);
 
     answer_option += "</div>";
-    option_list.innerHTML = answer_target;
-    select_list.innerHTML = answer_option;
+    // option_list.innerHTML = answer_target;
+    // select_list.innerHTML = answer_option;
     correct_list.innerHTML = "";
-    console.log(answer_option);
 
     for (i = 0; i < finalWordArr.length; i++) {
       answer_option += '<span class="my_option">';
@@ -375,6 +432,11 @@ function directSelected(userAns) {
       document.querySelector(".direct_input").style.backgroundColor = "green";
     }
   } else {
+    var errStorage = localStorage.getItem(curTopic + "_err");
+    if (errStorage === null) errStorage = curQuestion;
+    else errStorage = errStorage + "@" + curQuestion;
+    localStorage.setItem(curTopic + "_err", errStorage);
+
     console.log("Wrong Answer");
     if (curQuesType !== "direct_input") {
       document.querySelector(".option").classList.add("incorrect");
@@ -459,6 +521,7 @@ function showResult() {
     let scoreTag =
       "<span>恭喜! 🎉, 你得到 <p>" + final_score + "</p> 分 </span>";
     scoreText.innerHTML = scoreTag; //adding new span tag inside score_Text
+    localStorage.setItem(selCategory + "_" + selLevel + "_err", "");
   } else if (final_score >= 80) {
     // if user scored more than 1
     resultICON.innerHTML = '<i class="fas fa-grin-beam-sweat"></i>';
@@ -558,7 +621,7 @@ function inputkeyb(char) {
 
 document.addEventListener("keydown", keydown);
 function keydown(e) {
-  // alert("ben_debug:" + e.code);
+  if (!selLevel.includes("zhuyin")) return;
   e.preventDefault();
   switch (e.code) {
     case "Space":
@@ -697,4 +760,28 @@ function keydown(e) {
     default:
       break;
   }
+}
+
+function changeVariable(inputString, varArr) {
+  var newString;
+  if (inputString === undefined) return inputString;
+  newString = inputString.replace("{a}", varArr[0]);
+  newString = newString.replace("{b}", varArr[1]);
+  newString = newString.replace("{c}", varArr[2]);
+  newString = newString.replace("{a+b}", String(varArr[0] + varArr[1]));
+  newString = newString.replace(
+    "{a+b+c}",
+    String(varArr[0] + varArr[1] + varArr[2])
+  );
+  newString = newString.replace("{A}", varArr[3]);
+  newString = newString.replace("{B}", varArr[4]);
+  newString = newString.replace("{C}", varArr[5]);
+
+  if (newString.substring(0, 1) === "=") {
+    var calcString = newString.substring(1, newString.length);
+    newString = eval(calcString);
+  }
+
+  // alert(inputString + "\n" + newString)
+  return newString;
 }
